@@ -3,6 +3,8 @@
 #define MOON_LED_LEVEL LED_LEVEL
 #define ML_SAFE_RANGE SAFE_RANGE
 
+bool process_snakebab_word(uint16_t keycode, keyrecord_t *record);
+
 enum custom_keycodes {
   RGB_SLD = ML_SAFE_RANGE,
   HSV_0_255_255,
@@ -246,14 +248,11 @@ bool get_combo_must_tap(uint16_t combo_index, combo_t* combo) {
 }
 
 static uint16_t snakebab_timer;
-void snakebab_timer_reset(void) {
-    snakebab_timer = timer_read();
-}
 
 #define SNAKE_LAYER 1
 #define KEBAB_LAYER 2
 bool process_snakebab_word(uint16_t keycode, keyrecord_t *record) {
-    snakebab_timer_reset();
+    snakebab_timer = timer_read();
     if(keycode == SNAKE){
         layer_on(SNAKE_LAYER);
         layer_off(KEBAB_LAYER);
@@ -294,9 +293,11 @@ bool process_snakebab_word(uint16_t keycode, keyrecord_t *record) {
                 return true;
             default:
                 layer_off(SNAKE_LAYER);
-            layer_off(KEBAB_LAYER);
-            return true;
+                layer_off(KEBAB_LAYER);
+                return true;
         }
+    } else {
+      return true;
     }
 }
 
