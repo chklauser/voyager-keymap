@@ -16,6 +16,10 @@
 #define TAPPING_TERM_PER_KEY
 #define RGB_MATRIX_STARTUP_SPD 60
 
+// We use home row modifiers and combo keys.
+// Need to make sure that they only trigger on tapping
+#define COMBO_MUST_TAP_PER_COMBO
+
 #undef ENABLE_RGB_MATRIX_BAND_SAT
 #undef ENABLE_RGB_MATRIX_BAND_VAL
 #undef ENABLE_RGB_MATRIX_BAND_PINWHEEL_SAT
