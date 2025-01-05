@@ -5,8 +5,8 @@
 
 enum custom_keycodes {
   RGB_SLD = ML_SAFE_RANGE,
-  HSV_0_255_255,
-  HSV_74_255_255,
+  HSV_38_255_255,
+  HSV_0_0_255,
   HSV_169_255_255,
 };
 
@@ -38,24 +38,33 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KC_ESCAPE,      KC_F1,          KC_F2,          KC_F3,          KC_F4,          KC_F5,                                          KC_F6,          KC_F7,          KC_F8,          KC_F9,          KC_F10,         KC_F11,         
     KC_TILD,        KC_EXLM,        KC_AT,          KC_HASH,        KC_DLR,         KC_PERC,                                        KC_SLASH,       KC_7,           KC_8,           KC_9,           KC_MINUS,       KC_F12,         
     KC_TRANSPARENT, KC_GRAVE,       KC_LBRC,        KC_LCBR,        KC_LPRN,        KC_AMPR,                                        KC_ASTR,        KC_4,           KC_5,           KC_6,           KC_EQUAL,       KC_BSPC,        
-    KC_TRANSPARENT, KC_UNDS,        KC_RBRC,        KC_RCBR,        KC_RPRN,        KC_CIRC,                                        KC_PLUS,        KC_1,           KC_2,           KC_3,           KC_DOT,         KC_ENTER,       
+    KC_NO,          KC_UNDS,        KC_RBRC,        KC_RCBR,        KC_RPRN,        KC_CIRC,                                        KC_PLUS,        KC_1,           KC_2,           KC_3,           KC_DOT,         KC_ENTER,       
                                                     KC_TRANSPARENT, KC_TRANSPARENT,                                 KC_DELETE,      KC_0
   ),
   [4] = LAYOUT_voyager(
     RGB_MODE_FORWARD,KC_F1,          KC_F2,          KC_F3,          KC_F4,          KC_F5,                                          KC_F6,          KC_F7,          KC_F8,          KC_F9,          KC_F10,         KC_F11,         
     TOGGLE_LAYER_COLOR,KC_TRANSPARENT, KC_AUDIO_VOL_DOWN,KC_AUDIO_VOL_UP,KC_AUDIO_MUTE,  KC_TRANSPARENT,                                 KC_PAGE_UP,     KC_HOME,        KC_UP,          KC_END,         KC_MS_BTN5,     KC_F12,         
     RGB_TOG,        KC_LEFT_GUI,    KC_LEFT_ALT,    KC_LEFT_CTRL,   KC_LEFT_SHIFT,  RGB_SLD,                                        KC_PGDN,        KC_LEFT,        KC_DOWN,        KC_RIGHT,       KC_MS_BTN4,     KC_TRANSPARENT, 
-    QK_BOOT,        RGB_VAD,        RGB_VAI,        HSV_0_255_255,  HSV_74_255_255, HSV_169_255_255,                                KC_BSPC,        LCTL(LSFT(KC_TAB)),KC_INSERT,      LCTL(KC_TAB),   KC_DELETE,      KC_TRANSPARENT, 
+    KC_NO,          RGB_VAD,        RGB_VAI,        HSV_38_255_255, HSV_0_0_255,    HSV_169_255_255,                                KC_BSPC,        LCTL(LSFT(KC_TAB)),KC_INSERT,      LCTL(KC_TAB),   KC_DELETE,      KC_NO,          
                                                     KC_TRANSPARENT, KC_TRANSPARENT,                                 KC_TRANSPARENT, KC_TRANSPARENT
+  ),
+  [5] = LAYOUT_voyager(
+    KC_GRAVE,       KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,                                 KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, 
+    KC_TAB,         KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,                                 KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, 
+    KC_TRANSPARENT, KC_A,           KC_S,           KC_D,           KC_F,           KC_G,                                           KC_H,           KC_J,           KC_K,           KC_L,           KC_SCLN,        KC_TRANSPARENT, 
+    KC_LEFT_SHIFT,  KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,                                 KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_RIGHT_SHIFT, 
+                                                    KC_TRANSPARENT, KC_TRANSPARENT,                                 KC_TRANSPARENT, KC_SPACE
   ),
 };
 
 const uint16_t PROGMEM combo0[] = { KC_7, KC_8, COMBO_END};
 const uint16_t PROGMEM combo1[] = { MT(MOD_RSFT, KC_J), MT(MOD_RCTL, KC_K), COMBO_END};
+const uint16_t PROGMEM combo2[] = { KC_MINUS, KC_BSLS, KC_QUOTE, COMBO_END};
 
 combo_t key_combos[COMBO_COUNT] = {
     COMBO(combo0, KC_RIGHT_ALT),
     COMBO(combo1, KC_RIGHT_ALT),
+    COMBO(combo2, TG(5)),
 };
 
 uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
@@ -83,6 +92,8 @@ const uint8_t PROGMEM ledmap[][RGB_MATRIX_LED_COUNT][3] = {
     [3] = { {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219}, {139,238,219} },
 
     [4] = { {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245}, {0,245,245} },
+
+    [5] = { {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191}, {215,113,191} },
 
 };
 
@@ -121,6 +132,9 @@ bool rgb_matrix_indicators_user(void) {
     case 4:
       set_layer_color(4);
       break;
+    case 5:
+      set_layer_color(5);
+      break;
    default:
     if (rgb_matrix_get_flags() == LED_FLAG_NONE)
       rgb_matrix_set_color_all(0, 0, 0);
@@ -137,16 +151,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         rgblight_mode(1);
       }
       return false;
-    case HSV_0_255_255:
+    case HSV_38_255_255:
       if (record->event.pressed) {
         rgblight_mode(1);
-        rgblight_sethsv(0,255,255);
+        rgblight_sethsv(38,255,255);
       }
       return false;
-    case HSV_74_255_255:
+    case HSV_0_0_255:
       if (record->event.pressed) {
         rgblight_mode(1);
-        rgblight_sethsv(74,255,255);
+        rgblight_sethsv(0,0,255);
       }
       return false;
     case HSV_169_255_255:
