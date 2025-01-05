@@ -219,6 +219,8 @@ bool process_snakebab_word(uint16_t keycode, keyrecord_t *record) {
             || keycode == MT(MOD_RSFT, KC_J)
             || keycode == MT(MOD_RCTL, KC_K)
             || keycode == MT(MOD_LALT, KC_L)
+              || keycode == LT(4,KC_MINUS)
+              || keycode == LT(4,KC_F13)
           ){
           return true;
         }
