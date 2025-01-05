@@ -154,6 +154,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       }
       return false;
     // CUSTOMIZATIONS
+      case KC_F13:
+        if(record->event.pressed){
+          SEND_STRING("_");
+        }
+        return false;
     default:
       if (!process_snakebab_word(keycode, record)) {
         return false;
@@ -252,6 +257,11 @@ static uint16_t snakebab_timer;
 #define SNAKE_LAYER 1
 #define KEBAB_LAYER 2
 bool process_snakebab_word(uint16_t keycode, keyrecord_t *record) {
+    // From here on, we only take action on press events.
+    if (!record->event.pressed) {
+        return true;
+    }
+
     snakebab_timer = timer_read();
     if(keycode == SNAKE){
         layer_on(SNAKE_LAYER);
@@ -264,13 +274,20 @@ bool process_snakebab_word(uint16_t keycode, keyrecord_t *record) {
         return false;
     }
 
-    // From here on, we only take action on press events.
-    if (!record->event.pressed) {
-        return true;
-    }
-
     const uint8_t mods = get_mods() | get_oneshot_mods();
     if (!(mods & ~(MOD_MASK_SHIFT | MOD_BIT(KC_RALT)))) {
+        if(
+            keycode == MT(MOD_LGUI, KC_A)
+            || keycode == MT(MOD_LALT, KC_S)
+            || keycode == MT(MOD_LCTL, KC_D)
+            || keycode == MT(MOD_LSFT, KC_F)
+            || keycode == MT(MOD_RSFT, KC_J)
+            || keycode == MT(MOD_RCTL, KC_K)
+            || keycode == MT(MOD_LALT, KC_L)
+          ){
+          return true;
+        }
+
         switch (keycode) {
             // Ignore MO, TO, TG, TT, and OSL layer switch keys.
             case QK_MOMENTARY ... QK_MOMENTARY_MAX:
@@ -297,7 +314,9 @@ bool process_snakebab_word(uint16_t keycode, keyrecord_t *record) {
                 return true;
         }
     } else {
-      return true;
+        layer_off(SNAKE_LAYER);
+        layer_off(KEBAB_LAYER);
+        return true;
     }
 }
 
