@@ -174,11 +174,13 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       }
       return false;
     // CUSTOMIZATIONS
-      case KC_F13:
-        if(record->event.pressed){
-          SEND_STRING("_");
+      case LT(4,KC_F13):
+        if(record->tap.count){
+            if(record->event.pressed){
+              SEND_STRING("_");
+            }
+            return false;
         }
-        return false;
     default:
       if (!process_snakebab_word(keycode, record)) {
         return false;
@@ -213,12 +215,12 @@ bool process_snakebab_word(uint16_t keycode, keyrecord_t *record) {
 
     snakebab_timer = timer_read();
     if(keycode == SNAKE){
-        layer_on(SNAKE_LAYER);
+        layer_invert(SNAKE_LAYER);
         layer_off(KEBAB_LAYER);
         return false;
     }
     if(keycode == KEBAB){
-        layer_on(KEBAB_LAYER);
+        layer_invert(KEBAB_LAYER);
         layer_off(SNAKE_LAYER);
         return false;
     }
