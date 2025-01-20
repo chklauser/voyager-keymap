@@ -44,8 +44,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   [4] = LAYOUT_voyager(
     RGB_MODE_FORWARD,KC_F1,          KC_F2,          KC_F3,          KC_F4,          KC_F5,                                          KC_F6,          KC_F7,          KC_F8,          KC_F9,          KC_F10,         KC_F11,         
     TOGGLE_LAYER_COLOR,KC_TRANSPARENT, KC_AUDIO_VOL_DOWN,KC_AUDIO_VOL_UP,KC_AUDIO_MUTE,  KC_TRANSPARENT,                                 KC_PAGE_UP,     KC_HOME,        KC_UP,          KC_END,         KC_MS_BTN5,     KC_F12,         
-    RGB_TOG,        KC_LEFT_GUI,    KC_LEFT_ALT,    KC_LEFT_CTRL,   KC_LEFT_SHIFT,  RGB_SLD,                                        KC_PGDN,        KC_LEFT,        KC_DOWN,        KC_RIGHT,       KC_MS_BTN4,     LSFT(KC_F2),    
-    KC_NO,          RGB_VAD,        RGB_VAI,        HSV_38_255_255, HSV_0_0_255,    HSV_169_255_255,                                KC_BSPC,        KC_1,           KC_INSERT,      LALT(KC_F1),    KC_DELETE,      KC_F2,          
+    RGB_TOG,        KC_LEFT_GUI,    KC_LEFT_ALT,    KC_LEFT_CTRL,   KC_LEFT_SHIFT,  RGB_SLD,                                        KC_PGDN,        KC_LEFT,        KC_DOWN,        KC_RIGHT,       KC_MS_BTN4,     KC_F2,          
+    KC_NO,          RGB_VAD,        RGB_VAI,        HSV_38_255_255, HSV_0_0_255,    HSV_169_255_255,                                KC_BSPC,        LALT(KC_1),     KC_INSERT,      LALT(KC_F1),    KC_DELETE,      LSFT(KC_F2),    
                                                     KC_TRANSPARENT, KC_TRANSPARENT,                                 KC_TRANSPARENT, KC_TRANSPARENT
   ),
   [5] = LAYOUT_voyager(
