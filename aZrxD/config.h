@@ -9,9 +9,9 @@
 #define PERMISSIVE_HOLD
 
 #define USB_SUSPEND_WAKEUP_DELAY 0
-#define SERIAL_NUMBER "aZrxD/Mawbeb"
+#define SERIAL_NUMBER "aZrxD/wOnQnV"
 #define LAYER_STATE_8BIT
-#define COMBO_COUNT 3
+#define COMBO_COUNT 2
 
 #define TAPPING_TERM_PER_KEY
 #define RGB_MATRIX_STARTUP_SPD 60
