@@ -44,7 +44,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     RGB_MODE_FORWARD,KC_F1,          KC_F2,          KC_F3,          KC_F4,          KC_F5,                                          KC_F6,          KC_F7,          KC_F8,          KC_F9,          KC_F10,         KC_F11,         
     TOGGLE_LAYER_COLOR,KC_TRANSPARENT, KC_AUDIO_VOL_DOWN,KC_AUDIO_VOL_UP,KC_AUDIO_MUTE,  RGB_SLD,                                        KC_PAGE_UP,     KC_HOME,        KC_UP,          KC_END,         KC_MS_BTN5,     KC_F12,         
     RGB_TOG,        KC_LEFT_GUI,    KC_LEFT_ALT,    KC_LEFT_CTRL,   KC_LEFT_SHIFT,  KC_MEH,                                         KC_PGDN,        KC_LEFT,        KC_DOWN,        KC_RIGHT,       KC_MS_BTN4,     KC_F2,          
-    KC_NO,          RGB_VAD,        RGB_VAI,        QK_DYNAMIC_TAPPING_TERM_DOWN,QK_DYNAMIC_TAPPING_TERM_UP,HSV_169_255_255,                                KC_BSPC,        LALT(KC_1),     KC_INSERT,      LALT(KC_F1),    KC_DELETE,      LSFT(KC_F2),    
+    KC_NO,          RGB_VAD,        RGB_VAI,        KC_TRANSPARENT, KC_TRANSPARENT, HSV_169_255_255,                                KC_BSPC,        LALT(KC_1),     KC_INSERT,      LALT(KC_F1),    KC_DELETE,      LSFT(KC_F2),    
                                                     KC_TRANSPARENT, KC_TRANSPARENT,                                 KC_TRANSPARENT, KC_TRANSPARENT
   ),
   [5] = LAYOUT_voyager(
@@ -67,25 +67,27 @@ combo_t key_combos[COMBO_COUNT] = {
 uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case MT(MOD_LGUI, KC_A):
-            return g_tapping_term + 100;
+            return TAPPING_TERM + 100;
         case MT(MOD_LALT, KC_S):
-            return g_tapping_term + 100;
+            return TAPPING_TERM + 100;
+        case MT(MOD_LSFT, KC_F):
+            return TAPPING_TERM -10;
         case MEH_T(KC_G):
-            return g_tapping_term + 100;
+            return TAPPING_TERM + 100;
         case LT(3,KC_ENTER):
-            return g_tapping_term + 100;
+            return TAPPING_TERM + 100;
         case MEH_T(KC_H):
-            return g_tapping_term + 100;
+            return TAPPING_TERM + 100;
         case MT(MOD_RSFT, KC_J):
-            return 0;
+            return TAPPING_TERM -10;
         case MT(MOD_LALT, KC_L):
-            return g_tapping_term + 100;
+            return TAPPING_TERM + 100;
         case MT(MOD_LGUI, KC_SCLN):
-            return g_tapping_term + 100;
+            return TAPPING_TERM + 100;
         case LT(4,KC_SPACE):
-            return g_tapping_term + 50;
+            return TAPPING_TERM + 50;
         default:
-            return g_tapping_term;
+            return TAPPING_TERM;
     }
 }
 
