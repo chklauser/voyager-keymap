@@ -189,7 +189,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 bool get_combo_must_tap(uint16_t combo_index, combo_t* combo) {
     switch (combo_index) {
-        case 1:
+        case 0:
             // Return true to indicate that this combo must be pure taps
                 return true;
         default:
