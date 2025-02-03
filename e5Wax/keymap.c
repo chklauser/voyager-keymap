@@ -122,6 +122,10 @@ combo_t key_combos[COMBO_COUNT] = {
     COMBO(combo_jk, KC_NO),
 };
 
+bool get_combo_must_tap(uint16_t combo_index, combo_t *combo) {
+  return true;
+}
+
 void process_combo_event(uint16_t combo_index, bool pressed) {
   switch(combo_index) {
     case 1:

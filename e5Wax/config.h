@@ -14,6 +14,7 @@
 #define SERIAL_NUMBER "e5Wax/LvaXxD"
 #define LAYER_STATE_8BIT
 #define COMBO_COUNT 2
+#define COMBO_MUST_TAP_PER_COMBO
 
 #define RGB_MATRIX_STARTUP_SPD 60
 
