@@ -36,8 +36,8 @@ void on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
     SMTD_MT(CKC_K, KC_K, KC_RIGHT_CTRL)
     SMTD_MT(CKC_L, KC_L, KC_LEFT_ALT)
     SMTD_MT(CKC_SCLN, KC_SCLN, KC_LEFT_GUI)
-    SMTD_LT(CKC_RET, KC_ENTER, 2, 1, false)
-    SMTD_LT(CKC_SPC, KC_SPACE, 1, 1, false)
+    SMTD_LT(CKC_RET, KC_ENTER, 1, 1, false)
+    SMTD_LT(CKC_SPC, KC_SPACE, 2, 1, false)
   }
 }
 
