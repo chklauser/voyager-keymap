@@ -115,10 +115,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 const uint16_t PROGMEM combo0[] = { KC_BSLS, KC_QUOTE, KC_F11, COMBO_END};
 const uint16_t PROGMEM combo_jk[] = { CKC_J, CKC_K, COMBO_END};
+const uint16_t PROGMEM combo_ui[] = { KC_U, KC_I, COMBO_END};
 
 combo_t key_combos[COMBO_COUNT] = {
     COMBO(combo0, TG(3)),
     COMBO(combo_jk, KC_NO),
+    COMBO(combo_ui, KC_RIGHT_ALT),
 };
 
 bool get_combo_must_tap(uint16_t combo_index, combo_t *combo) {
