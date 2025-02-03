@@ -51,16 +51,16 @@ enum custom_keycodes {
 
 void on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
   switch(keycode){
-    SMTD_MT(CKC_A, KC_A, KC_LEFT_GUI, 2)
-    SMTD_MT(CKC_S, KC_S, KC_LEFT_ALT, 2)
-    SMTD_MT(CKC_D, KC_D, KC_LEFT_CTRL, 2)
-    SMTD_MT(CKC_F, KC_F, KC_LEFT_SHIFT, 2)
-    SMTD_MT(CKC_G, KC_G, KC_MEH, 2)
-    SMTD_MT(CKC_H, KC_H, KC_MEH, 2)
-    SMTD_MT(CKC_J, KC_J, KC_RIGHT_SHIFT, 2)
-    SMTD_MT(CKC_K, KC_K, KC_RIGHT_CTRL, 2)
-    SMTD_MT(CKC_L, KC_L, KC_LEFT_ALT, 2)
-    SMTD_MT(CKC_SCLN, KC_SCLN, KC_LEFT_GUI, 2)
+    SMTD_MT(CKC_A, KC_A, KC_LEFT_GUI, 1)
+    SMTD_MT(CKC_S, KC_S, KC_LEFT_ALT, 1)
+    SMTD_MT(CKC_D, KC_D, KC_LEFT_CTRL, 1)
+    SMTD_MT(CKC_F, KC_F, KC_LEFT_SHIFT, 1)
+    SMTD_MT(CKC_G, KC_G, KC_MEH, 1)
+    SMTD_MT(CKC_H, KC_H, KC_MEH, 1)
+    SMTD_MT(CKC_J, KC_J, KC_RIGHT_SHIFT, 1)
+    SMTD_MT(CKC_K, KC_K, KC_RIGHT_CTRL, 1)
+    SMTD_MT(CKC_L, KC_L, KC_LEFT_ALT, 1)
+    SMTD_MT(CKC_SCLN, KC_SCLN, KC_LEFT_GUI, 1)
     SMTD_LTcw(CKC_RET, KC_ENTER, 1)
     SMTD_LTcw(CKC_SPC, KC_SPACE, 2)
     case CKC_JK:
@@ -75,7 +75,6 @@ void on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
           break;
         case SMTD_ACTION_RELEASE:
           unregister_mods(MOD_BIT(KC_RSFT) | MOD_BIT(KC_RCTL));
-          unregister_code16(KC_RIGHT_ALT);
           break;
       }
       return;
