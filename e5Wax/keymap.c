@@ -119,7 +119,7 @@ const uint16_t PROGMEM combo_jk[] = { CKC_J, CKC_K, COMBO_END};
 
 combo_t key_combos[COMBO_COUNT] = {
     COMBO(combo0, TG(3)),
-    COMBO(combo_jk, KC_RIGHT_ALT),
+    COMBO(combo_jk, KC_NO),
 };
 
 void process_combo_event(uint16_t combo_index, bool pressed) {
