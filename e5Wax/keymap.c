@@ -4,20 +4,51 @@
 #define ML_SAFE_RANGE SAFE_RANGE
 
 enum custom_keycodes {
-  RGB_SLD = ML_SAFE_RANGE,
+  SMTD_KEYCODES_BEGIN = ML_SAFE_RANGE,
+  CKC_A,
+  CKC_S,
+  CKC_D,
+  CKC_F,
+  CKC_G,
+  CKC_H,
+  CKC_J,
+  CKC_K,
+  CKC_L,
+  CKC_SCLN,
+  CKC_RET,
+  CKC_SPC,
+  SMTD_KEYCODES_END,
+  RGB_SLD,
   HSV_169_255_255,
   ST_MACRO_0,
 };
+#include "sm_td.h" // must be included exactly after custom_keycodes
 
+void on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
+  switch(keycode){
+    SMTD_MT(CKC_A, KC_A, KC_LEFT_GUI)
+    SMTD_MT(CKC_S, KC_S, KC_LEFT_ALT)
+    SMTD_MT(CKC_D, KC_D, KC_LEFT_CTRL)
+    SMTD_MT(CKC_F, KC_F, KC_LEFT_SHIFT)
+    SMTD_MT(CKC_G, KC_G, KC_MEH)
+    SMTD_MT(CKC_H, KC_H, KC_MEH)
+    SMTD_MT(CKC_J, KC_J, KC_RIGHT_SHIFT)
+    SMTD_MT(CKC_K, KC_K, KC_RIGHT_CTRL)
+    SMTD_MT(CKC_L, KC_L, KC_LEFT_ALT)
+    SMTD_MT(CKC_SCLN, KC_SCLN, KC_LEFT_GUI)
+    SMTD_LT(CKC_RET, KC_ENTER, 2, 1, false)
+    SMTD_LT(CKC_SPC, KC_SPACE, 1, 1, false)
+  }
+}
 
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   [0] = LAYOUT_voyager(
     KC_TRANSPARENT, KC_F1,          KC_F2,          KC_F3,          KC_F4,          KC_F5,                                          KC_F6,          KC_F7,          KC_F8,          KC_F9,          KC_F10,         KC_F11,         
     CW_TOGG,        KC_Q,           KC_W,           KC_E,           KC_R,           KC_T,                                           KC_Y,           KC_U,           KC_I,           KC_O,           KC_P,           KC_BSLS,        
-    KC_ESCAPE,      KC_NO,          KC_NO,          KC_NO,          KC_NO,          KC_NO,                                          KC_NO,          KC_NO,          KC_NO,          KC_NO,          KC_NO,          KC_QUOTE,       
+    KC_ESCAPE,      CKC_A,          CKC_S,          CKC_D,          CKC_F,          CKC_G,                                          CKC_H,          CKC_J,          CKC_K,          CKC_L,          CKC_SCLN,       KC_QUOTE,
     KC_NO,          KC_Z,           KC_X,           KC_C,           KC_V,           KC_B,                                           KC_N,           KC_M,           KC_COMMA,       KC_DOT,         KC_SLASH,       KC_NO,          
-                                                    KC_NO,          KC_TAB,                                         KC_BSPC,        KC_NO
+                                                    CKC_RET,        KC_TAB,                                         KC_BSPC,        CKC_SPC
   ),
   [1] = LAYOUT_voyager(
     KC_TRANSPARENT, KC_F1,          KC_F2,          KC_F3,          KC_F4,          KC_F5,                                          KC_F6,          KC_F7,          KC_F8,          KC_F9,          KC_F10,         KC_F11,         
@@ -43,11 +74,32 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 
 const uint16_t PROGMEM combo0[] = { KC_BSLS, KC_QUOTE, KC_F11, COMBO_END};
+const uint16_t PROGMEM combo_jk[] = { CKC_J, CKC_K, COMBO_END};
 
-combo_t key_combos[COMBO_COUNT] = {
-    COMBO(combo0, TG(3)),
+enum combo_events {
+  oryx_combo0,
+  JK,
 };
 
+combo_t key_combos[COMBO_COUNT] = {
+    [oryx_combo0] = COMBO(combo0, TG(3)),
+    [JK] = COMBO(combo_jk, KC_RIGHT_ALT),
+};
+
+#define CASE_COMBO1_TAP(combo1, key) \
+  case combo1: \
+    if (pressed) { \
+      register_code16(key); \
+    } else { \
+      unregister_code16(key); \
+    } \
+    return;
+
+void process_combo_event(uint16_t combo_index, bool pressed) {
+  switch(combo_index) {
+    CASE_COMBO1_TAP(JK, KC_RIGHT_ALT)
+  }
+}
 
 extern rgb_config_t rgb_matrix_config;
 
@@ -105,6 +157,10 @@ bool rgb_matrix_indicators_user(void) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  if (!process_smtd(keycode, record)) {
+    return false;
+  }
+
   switch (keycode) {
     case ST_MACRO_0:
     if (record->event.pressed) {
