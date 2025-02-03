@@ -25,6 +25,30 @@ enum custom_keycodes {
 };
 #include "sm_td.h" // must be included exactly after custom_keycodes
 
+#define SMTD_LTcw(virt_kc, tap_kc, layer_idx) case virt_kc: { \
+  switch (action) { \
+    case SMTD_ACTION_TOUCH: \
+      break; \
+    case SMTD_ACTION_TAP: \
+      caps_word_off(); \
+      tap_code16(tap_kc); \
+    break; \
+    case SMTD_ACTION_HOLD: \
+      if (tap_count < 1) { \
+        LAYER_PUSH(layer_idx); \
+      } else { \
+        register_code16(tap_kc); \
+      } \
+    break; \
+    case SMTD_ACTION_RELEASE: \
+      if (tap_count < 1) { \
+        LAYER_RESTORE(); \
+      } \
+      unregister_code16(tap_kc); \
+    break; \
+  } \
+  break; }
+
 void on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
   switch(keycode){
     SMTD_MT(CKC_A, KC_A, KC_LEFT_GUI)
@@ -37,8 +61,8 @@ void on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
     SMTD_MT(CKC_K, KC_K, KC_RIGHT_CTRL)
     SMTD_MT(CKC_L, KC_L, KC_LEFT_ALT)
     SMTD_MT(CKC_SCLN, KC_SCLN, KC_LEFT_GUI)
-    SMTD_LT(CKC_RET, KC_ENTER, 1, 1, false)
-    SMTD_LT(CKC_SPC, KC_SPACE, 2, 1, false)
+    SMTD_LTcw(CKC_RET, KC_ENTER, 1)
+    SMTD_LTcw(CKC_SPC, KC_SPACE, 2)
     case CKC_JK:
       switch(action){
         case SMTD_ACTION_TOUCH:
@@ -93,19 +117,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 const uint16_t PROGMEM combo0[] = { KC_BSLS, KC_QUOTE, KC_F11, COMBO_END};
 const uint16_t PROGMEM combo_jk[] = { CKC_J, CKC_K, COMBO_END};
 
-enum combo_events {
-  oryx_combo0,
-  JK,
-};
-
 combo_t key_combos[COMBO_COUNT] = {
-    [oryx_combo0] = COMBO(combo0, TG(3)),
-    [JK] = COMBO(combo_jk, KC_RIGHT_ALT),
+    COMBO(combo0, TG(3)),
+    COMBO(combo_jk, KC_RIGHT_ALT),
 };
 
 void process_combo_event(uint16_t combo_index, bool pressed) {
   switch(combo_index) {
-    case JK:
+    case 1:
       // Emit a key event for sm_td. Handled in on_smtd_action.
       keyrecord_t record = {.event = MAKE_KEYEVENT(0, 0, pressed)};
       process_smtd(CKC_JK, &record);
