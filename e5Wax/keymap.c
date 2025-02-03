@@ -18,6 +18,7 @@ enum custom_keycodes {
   CKC_RET,
   CKC_SPC,
   SMTD_KEYCODES_END,
+  CKC_JK,
   RGB_SLD,
   HSV_169_255_255,
   ST_MACRO_0,
@@ -38,6 +39,22 @@ void on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
     SMTD_MT(CKC_SCLN, KC_SCLN, KC_LEFT_GUI)
     SMTD_LT(CKC_RET, KC_ENTER, 1, 1, false)
     SMTD_LT(CKC_SPC, KC_SPACE, 2, 1, false)
+    case CKC_JK:
+      switch(action){
+        case SMTD_ACTION_TOUCH:
+          break;
+        case SMTD_ACTION_TAP:
+          tap_code16(KC_RIGHT_ALT);
+          break;
+        case SMTD_ACTION_HOLD:
+          register_mods(MOD_BIT(KC_RSFT) | MOD_BIT(KC_RCTL));
+          break;
+        case SMTD_ACTION_RELEASE:
+          unregister_mods(MOD_BIT(KC_RSFT) | MOD_BIT(KC_RCTL));
+          unregister_code16(KC_RIGHT_ALT);
+          break;
+      }
+      return;
   }
 }
 
@@ -86,18 +103,13 @@ combo_t key_combos[COMBO_COUNT] = {
     [JK] = COMBO(combo_jk, KC_RIGHT_ALT),
 };
 
-#define CASE_COMBO1_TAP(combo1, key) \
-  case combo1: \
-    if (pressed) { \
-      register_code16(key); \
-    } else { \
-      unregister_code16(key); \
-    } \
-    return;
-
 void process_combo_event(uint16_t combo_index, bool pressed) {
   switch(combo_index) {
-    CASE_COMBO1_TAP(JK, KC_RIGHT_ALT)
+    case JK:
+      // Emit a key event for sm_td. Handled in on_smtd_action.
+      keyrecord_t record = {.event = MAKE_KEYEVENT(0, 0, pressed)};
+      process_smtd(CKC_JK, &record);
+      return;
   }
 }
 
