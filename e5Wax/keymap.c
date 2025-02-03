@@ -66,6 +66,37 @@ void on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
   }
 }
 
+uint32_t get_smtd_timeout(uint16_t keycode, smtd_timeout timeout) {
+  uint32_t default_timeout = get_smtd_timeout_default(timeout);
+  uint32_t really_dangerous_extend = 100;
+  uint32_t dangerous_extend = 50;
+  switch (keycode) {
+    case CKC_L:
+    case CKC_S:
+      switch(timeout) {
+        case SMTD_TIMEOUT_TAP:
+          return default_timeout + really_dangerous_extend;
+        case SMTD_TIMEOUT_RELEASE:
+          return default_timeout + (really_dangerous_extend >> 3);
+        default:
+          break;
+      }
+
+    case CKC_SCLN:
+    case CKC_A:
+      switch(timeout) {
+        case SMTD_TIMEOUT_TAP:
+          return default_timeout + dangerous_extend;
+        case SMTD_TIMEOUT_RELEASE:
+          return default_timeout - (dangerous_extend >> 3);
+        default:
+          break;
+      }
+  }
+
+  return default_timeout;
+}
+
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   [0] = LAYOUT_voyager(
