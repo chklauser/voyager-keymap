@@ -1,6 +1,8 @@
 // Customizations
 // sm_td requires at least 10 deferred executors. If you need your own, increase this limit accordingly.
 #define MAX_DEFERRED_EXECUTORS 10
+#define TAPPING_TERM 200
+#define TAPPING_TERM_PER_KEY
 
 // Oryx configurator
 /*
