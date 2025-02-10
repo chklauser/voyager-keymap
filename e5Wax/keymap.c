@@ -69,7 +69,7 @@ void on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
 
 uint32_t get_smtd_timeout(uint16_t keycode, smtd_timeout timeout) {
   uint32_t default_timeout = get_smtd_timeout_default(timeout);
-  uint32_t really_dangerous_extend = 100;
+  uint32_t really_dangerous_extend = 150;
   uint32_t dangerous_extend = 50;
   switch (keycode) {
     case CKC_L:
@@ -113,7 +113,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   [0] = LAYOUT_voyager(
     KC_TRANSPARENT, KC_F1,          KC_F2,          KC_F3,          KC_F4,          KC_F5,                                          KC_F6,          KC_F7,          KC_F8,          KC_F9,          KC_F10,         KC_F11,         
     CW_TOGG,        KC_Q,           KC_W,           KC_E,           KC_R,           KC_T,                                           KC_Y,           KC_U,           KC_I,           KC_O,           KC_P,           KC_BSLS,        
-    KC_ESCAPE,      CKC_A,          LALT_T(KC_S),   CKC_D,          CKC_F,          CKC_G,                                          CKC_H,          CKC_J,          CKC_K,          LALT_T(KC_L),   CKC_SCLN,       KC_QUOTE,
+    KC_ESCAPE,      CKC_A,          CKC_S,          CKC_D,          CKC_F,          KC_G,                                           KC_H,           CKC_J,          CKC_K,          CKC_L,          CKC_SCLN,       KC_QUOTE,
     KC_NO,          KC_Z,           KC_X,           KC_C,           KC_V,           KC_B,                                           KC_N,           KC_M,           KC_COMMA,       KC_DOT,         KC_SLASH,       LSA(KC_INSERT),
                                                     CKC_RET,        KC_TAB,                                         KC_BSPC,        CKC_SPC
   ),
