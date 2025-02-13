@@ -64,6 +64,18 @@ void on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
     SMTD_MT(CKC_SCLN, KC_SCLN, KC_LEFT_GUI, 1)
     SMTD_LTcw(CKC_RET, KC_ENTER, 1)
     SMTD_LTcw(CKC_SPC, KC_SPACE, 2)
+    case CKC_JK:
+      switch(action){
+        case SMTD_ACTION_TAP:
+          tap_code16(KC_RIGHT_ALT);
+          break;
+        case SMTD_ACTION_TOUCH:
+        case SMTD_ACTION_HOLD:
+        case SMTD_ACTION_RELEASE:
+          // don't do anything
+          break;
+      }
+      return;
   }
 }
 
@@ -78,7 +90,7 @@ uint32_t get_smtd_timeout(uint16_t keycode, smtd_timeout timeout) {
         case SMTD_TIMEOUT_TAP:
           return default_timeout + really_dangerous_extend;
         case SMTD_TIMEOUT_RELEASE:
-          return default_timeout + (really_dangerous_extend >> 3);
+          return default_timeout - (really_dangerous_extend >> 3);
         default:
           break;
       }
@@ -108,12 +120,19 @@ uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
     }
 }
 
+#ifdef qmk_alt
+#define CH_S LALT_T(KC_S)
+#define CH_L LALT_T(KC_L)
+#else
+#define CH_S CKC_S
+#define CH_L CKC_L
+#endif
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   [0] = LAYOUT_voyager(
     KC_TRANSPARENT, KC_F1,          KC_F2,          KC_F3,          KC_F4,          KC_F5,                                          KC_F6,          KC_F7,          KC_F8,          KC_F9,          KC_F10,         KC_F11,         
     CW_TOGG,        KC_Q,           KC_W,           KC_E,           KC_R,           KC_T,                                           KC_Y,           KC_U,           KC_I,           KC_O,           KC_P,           KC_BSLS,        
-    KC_ESCAPE,      CKC_A,          LALT_T(KC_S),   CKC_D,          CKC_F,          KC_G,                                           KC_H,           CKC_J,          CKC_K,          LALT_T(KC_L),   CKC_SCLN,       KC_QUOTE,
+    KC_ESCAPE,      CKC_A,          CH_S,           CKC_D,          CKC_F,          KC_G,                                           KC_H,           CKC_J,          CKC_K,          CH_L,           CKC_SCLN,       KC_QUOTE,
     KC_NO,          KC_Z,           KC_X,           KC_C,           KC_V,           KC_B,                                           KC_N,           KC_M,           KC_COMMA,       KC_DOT,         KC_SLASH,       LSA(KC_INSERT),
                                                     CKC_RET,        KC_TAB,                                         KC_BSPC,        CKC_SPC
   ),
@@ -142,11 +161,32 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 const uint16_t PROGMEM combo0[] = { KC_BSLS, KC_QUOTE, KC_F11, COMBO_END};
 const uint16_t PROGMEM combo_ui[] = { KC_U, KC_I, COMBO_END};
+const uint16_t PROGMEM combo_jk[] = { CKC_J, CKC_K, COMBO_END};
 
 combo_t key_combos[COMBO_COUNT] = {
-    COMBO(combo0, TG(3)),
-    COMBO(combo_ui, KC_RIGHT_ALT),
+    COMBO_ACTION(combo0),
+    COMBO_ACTION(combo_ui),
+    COMBO_ACTION(combo_jk),
 };
+
+void process_combo_event(uint16_t combo_index, bool pressed) {
+  switch(combo_index) {
+    case 0:
+      if (pressed) {
+        layer_invert(3);
+      }
+      break;
+    case 1:
+      if (pressed) {
+        tap_code16(KC_RIGHT_ALT);
+      }
+      break;
+    case 2:
+      keyrecord_t record = {.event = MAKE_KEYEVENT(0, 0, pressed)};
+      process_smtd(CKC_JK, &record);
+      break;
+  }
+}
 
 bool get_combo_must_tap(uint16_t combo_index, combo_t *combo) {
   return true;
