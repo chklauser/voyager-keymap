@@ -21,18 +21,11 @@ enum custom_keycodes {
       tap_code16(tap_kc); \
       break; \
     case SMTD_ACTION_HOLD: \
-      if (tap_count < 1) { \
-        LAYER_PUSH(layer_idx); \
-      } else { \
-        register_code16(tap_kc); \
-      } \
+      LAYER_PUSH(layer_idx); \
       break; \
     case SMTD_ACTION_RELEASE: \
-      if (tap_count < 1) { \
-        LAYER_RESTORE(); \
-      } \
-      unregister_code16(tap_kc); \
-    break; \
+      LAYER_RESTORE(); \
+      break; \
   } \
   return SMTD_RESOLUTION_DETERMINED; }
 
