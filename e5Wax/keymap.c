@@ -49,8 +49,8 @@ smtd_resolution on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap
     SMTD_MT(KC_K, KC_RIGHT_CTRL, 1)
     SMTD_MT(KC_L, KC_LEFT_ALT, 1)
     SMTD_MT(KC_SCLN, KC_LEFT_GUI, 1)
-    SMTD_LTcw(KC_ENTER, 1)
-    SMTD_LTcw(KC_SPACE, 2)
+    SMTD_LT(KC_ENTER, 1)
+    SMTD_LT(KC_SPACE, 2)
     case CKC_JK:
       switch(action){
         case SMTD_ACTION_TAP:
