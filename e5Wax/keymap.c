@@ -19,14 +19,14 @@ enum custom_keycodes {
     case SMTD_ACTION_TAP: \
       caps_word_off(); \
       tap_code16(tap_kc); \
-    break; \
+      break; \
     case SMTD_ACTION_HOLD: \
       if (tap_count < 1) { \
         LAYER_PUSH(layer_idx); \
       } else { \
         register_code16(tap_kc); \
       } \
-    break; \
+      break; \
     case SMTD_ACTION_RELEASE: \
       if (tap_count < 1) { \
         LAYER_RESTORE(); \
@@ -34,7 +34,7 @@ enum custom_keycodes {
       unregister_code16(tap_kc); \
     break; \
   } \
-  break; }
+  return SMTD_RESOLUTION_DETERMINED; }
 
 #define MOD_BIT_MEH MOD_BIT(KC_LEFT_SHIFT) | MOD_BIT(KC_LEFT_ALT) | MOD_BIT(KC_LEFT_CTRL)
 smtd_resolution on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
@@ -49,8 +49,8 @@ smtd_resolution on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap
     SMTD_MT(KC_K, KC_RIGHT_CTRL, 1)
     SMTD_MT(KC_L, KC_LEFT_ALT, 1)
     SMTD_MT(KC_SCLN, KC_LEFT_GUI, 1)
-    SMTD_LT(KC_ENTER, 1)
-    SMTD_LT(KC_SPACE, 2)
+    SMTD_LTcw(KC_ENTER, 1)
+    SMTD_LTcw(KC_SPACE, 2)
     case CKC_JK:
       switch(action){
         case SMTD_ACTION_TAP:
