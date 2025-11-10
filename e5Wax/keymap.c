@@ -4,20 +4,7 @@
 #define ML_SAFE_RANGE SAFE_RANGE
 
 enum custom_keycodes {
-  SMTD_KEYCODES_BEGIN = ML_SAFE_RANGE,
-  CKC_A,
-  CKC_S,
-  CKC_D,
-  CKC_F,
-  CKC_G,
-  CKC_H,
-  CKC_J,
-  CKC_K,
-  CKC_L,
-  CKC_SCLN,
-  CKC_RET,
-  CKC_SPC,
-  SMTD_KEYCODES_END,
+  CKC_BEGIN = ML_SAFE_RANGE, // no longer required since sm_td 5.0
   CKC_JK,
   RGB_SLD,
   HSV_169_255_255,
@@ -50,20 +37,20 @@ enum custom_keycodes {
   break; }
 
 #define MOD_BIT_MEH MOD_BIT(KC_LEFT_SHIFT) | MOD_BIT(KC_LEFT_ALT) | MOD_BIT(KC_LEFT_CTRL)
-void on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
+smtd_resolution on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
   switch(keycode){
-    SMTD_MT(CKC_A, KC_A, KC_LEFT_GUI, 1)
-    SMTD_MT(CKC_S, KC_S, KC_LEFT_ALT, 1)
-    SMTD_MT(CKC_D, KC_D, KC_LEFT_CTRL, 1)
-    SMTD_MT(CKC_F, KC_F, KC_LEFT_SHIFT, 1)
-    SMTD_MT(CKC_G, KC_G, MOD_BIT_MEH, 1)
-    SMTD_MT(CKC_H, KC_H, MOD_BIT_MEH, 1)
-    SMTD_MT(CKC_J, KC_J, KC_RIGHT_SHIFT, 1)
-    SMTD_MT(CKC_K, KC_K, KC_RIGHT_CTRL, 1)
-    SMTD_MT(CKC_L, KC_L, KC_LEFT_ALT, 1)
-    SMTD_MT(CKC_SCLN, KC_SCLN, KC_LEFT_GUI, 1)
-    SMTD_LTcw(CKC_RET, KC_ENTER, 1)
-    SMTD_LTcw(CKC_SPC, KC_SPACE, 2)
+    SMTD_MT(KC_A, KC_LEFT_GUI, 1)
+    SMTD_MT(KC_S, KC_LEFT_ALT, 1)
+    SMTD_MT(KC_D, KC_LEFT_CTRL, 1)
+    SMTD_MT(KC_F, KC_LEFT_SHIFT, 1)
+    SMTD_MT(KC_G, MOD_BIT_MEH, 1)
+    SMTD_MT(KC_H, MOD_BIT_MEH, 1)
+    SMTD_MT(KC_J, KC_RIGHT_SHIFT, 1)
+    SMTD_MT(KC_K, KC_RIGHT_CTRL, 1)
+    SMTD_MT(KC_L, KC_LEFT_ALT, 1)
+    SMTD_MT(KC_SCLN, KC_LEFT_GUI, 1)
+    SMTD_LTcw(KC_ENTER, 1)
+    SMTD_LTcw(KC_SPACE, 2)
     case CKC_JK:
       switch(action){
         case SMTD_ACTION_TAP:
@@ -77,6 +64,7 @@ void on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
       }
       return;
   }
+  return SMTD_RESOLUTION_UNHANDLED;
 }
 
 uint32_t get_smtd_timeout(uint16_t keycode, smtd_timeout timeout) {
@@ -84,8 +72,8 @@ uint32_t get_smtd_timeout(uint16_t keycode, smtd_timeout timeout) {
   uint32_t really_dangerous_extend = 150;
   uint32_t dangerous_extend = 50;
   switch (keycode) {
-    case CKC_L:
-    case CKC_S:
+    case KC_L:
+    case KC_S:
       switch(timeout) {
         case SMTD_TIMEOUT_TAP:
           return default_timeout + really_dangerous_extend;
@@ -95,8 +83,8 @@ uint32_t get_smtd_timeout(uint16_t keycode, smtd_timeout timeout) {
           break;
       }
 
-    case CKC_SCLN:
-    case CKC_A:
+    case KC_SCLN:
+    case KC_A:
       switch(timeout) {
         case SMTD_TIMEOUT_TAP:
           return default_timeout + dangerous_extend;
@@ -124,17 +112,17 @@ uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
 #define CH_S LALT_T(KC_S)
 #define CH_L LALT_T(KC_L)
 #else
-#define CH_S CKC_S
-#define CH_L CKC_L
+#define CH_S KC_S
+#define CH_L KC_L
 #endif
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   [0] = LAYOUT_voyager(
     KC_TRANSPARENT, KC_F1,          KC_F2,          KC_F3,          KC_F4,          KC_F5,                                          KC_F6,          KC_F7,          KC_F8,          KC_F9,          KC_F10,         KC_F11,         
     CW_TOGG,        KC_Q,           KC_W,           KC_E,           KC_R,           KC_T,                                           KC_Y,           KC_U,           KC_I,           KC_O,           KC_P,           KC_BSLS,        
-    KC_ESCAPE,      CKC_A,          CH_S,           CKC_D,          CKC_F,          KC_G,                                           KC_H,           CKC_J,          CKC_K,          CH_L,           CKC_SCLN,       KC_QUOTE,
+    KC_ESCAPE,      KC_A,           CH_S,           KC_D,           KC_F,           KC_G,                                           KC_H,           KC_J,           KC_K,           CH_L,           KC_SCLN,        KC_QUOTE,
     OSL(1),         KC_Z,           KC_X,           KC_C,           KC_V,           KC_B,                                           KC_N,           KC_M,           KC_COMMA,       KC_DOT,         KC_SLASH,       LSA(KC_INSERT),
-                                                    CKC_RET,        KC_TAB,                                         KC_BSPC,        CKC_SPC
+                                                    KC_RET,         KC_TAB,                                         KC_BSPC,        KC_SPC
   ),
   [1] = LAYOUT_voyager(
     KC_TRANSPARENT, KC_F1,          KC_F2,          KC_F3,          KC_F4,          KC_F5,                                          KC_F6,          KC_F7,          KC_F8,          KC_F9,          KC_F10,         KC_F11,         
@@ -161,7 +149,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 const uint16_t PROGMEM combo0[] = { KC_BSLS, KC_QUOTE, KC_F11, COMBO_END};
 const uint16_t PROGMEM combo_ui[] = { KC_U, KC_I, COMBO_END};
-const uint16_t PROGMEM combo_jk[] = { CKC_J, CKC_K, COMBO_END};
+const uint16_t PROGMEM combo_jk[] = { KC_J, KC_K, COMBO_END};
 
 combo_t key_combos[COMBO_COUNT] = {
     COMBO_ACTION(combo0),
