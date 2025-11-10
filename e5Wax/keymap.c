@@ -12,7 +12,7 @@ enum custom_keycodes {
 };
 #include "sm_td.h" // must be included exactly after custom_keycodes
 
-#define SMTD_LTcw(virt_kc, tap_kc, layer_idx) case virt_kc: { \
+#define SMTD_LTcw(tap_kc, layer_idx) case tap_kc: { \
   switch (action) { \
     case SMTD_ACTION_TOUCH: \
       break; \
