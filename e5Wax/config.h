@@ -1,9 +1,24 @@
+// Customizations
+// sm_td requires at least 10 deferred executors. If you need your own, increase this limit accordingly.
+#define MAX_DEFERRED_EXECUTORS 10
+#define TAPPING_TERM 200
+#define TAPPING_TERM_PER_KEY
+#define ONESHOT_TIMEOUT 2000
+#define ONESHOT_TAP_TOGGLE 2
+
+// Oryx configurator
+/*
+  Set any config.h overrides for your specific keymap here.
+  See config.h options at https://docs.qmk.fm/#/config_options?id=the-configh-file
+*/
+
 #define PERMISSIVE_HOLD
 
 #define USB_SUSPEND_WAKEUP_DELAY 0
 #define SERIAL_NUMBER "e5Wax/OaoNrq"
 #define LAYER_STATE_8BIT
-#define COMBO_COUNT 1
+#define COMBO_COUNT 3
+#define COMBO_MUST_TAP_PER_COMBO
 
 #define RGB_MATRIX_STARTUP_SPD 60
 

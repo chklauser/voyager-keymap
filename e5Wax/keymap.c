@@ -6,21 +6,119 @@
 #endif
 
 enum custom_keycodes {
-  RGB_SLD = ZSA_SAFE_RANGE,
+  CKC_BEGIN = ZSA_SAFE_RANGE, // no longer required since sm_td 5.0
+  CKC_JK,
+  RGB_SLD,
   HSV_169_255_255,
   ST_MACRO_0,
 };
+#include "sm_td.h" // must be included exactly after custom_keycodes
 
+#define SMTD_LTcw(tap_kc, layer_idx) case tap_kc: { \
+  switch (action) { \
+    case SMTD_ACTION_TOUCH: \
+      break; \
+    case SMTD_ACTION_TAP: \
+      caps_word_off(); \
+      tap_code16(tap_kc); \
+      break; \
+    case SMTD_ACTION_HOLD: \
+      LAYER_PUSH(layer_idx); \
+      break; \
+    case SMTD_ACTION_RELEASE: \
+      LAYER_RESTORE(); \
+      break; \
+  } \
+  return SMTD_RESOLUTION_DETERMINED; }
 
+#define MOD_BIT_MEH MOD_BIT(KC_LEFT_SHIFT) | MOD_BIT(KC_LEFT_ALT) | MOD_BIT(KC_LEFT_CTRL)
+smtd_resolution on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
+  switch(keycode){
+    SMTD_MT(KC_A, KC_LEFT_GUI, 1)
+    SMTD_MT(KC_S, KC_LEFT_ALT, 1)
+    SMTD_MT(KC_D, KC_LEFT_CTRL, 1)
+    SMTD_MT(KC_F, KC_LEFT_SHIFT, 1)
+    // SMTD_MT(KC_G, MOD_BIT_MEH, 1)
+    // SMTD_MT(KC_H, MOD_BIT_MEH, 1)
+    SMTD_MT(KC_J, KC_RIGHT_SHIFT, 1)
+    SMTD_MT(KC_K, KC_RIGHT_CTRL, 1)
+    SMTD_MT(KC_L, KC_LEFT_ALT, 1)
+    SMTD_MT(KC_SCLN, KC_LEFT_GUI, 1)
+    SMTD_LT(KC_ENTER, 1)
+    SMTD_LT(KC_SPACE, 2)
+    case CKC_JK:
+      switch(action){
+        case SMTD_ACTION_TAP:
+          tap_code16(KC_RIGHT_ALT);
+          break;
+        case SMTD_ACTION_TOUCH:
+        case SMTD_ACTION_HOLD:
+        case SMTD_ACTION_RELEASE:
+          // don't do anything
+          break;
+      }
+      return SMTD_RESOLUTION_DETERMINED;
+  }
+  return SMTD_RESOLUTION_UNHANDLED;
+}
+
+uint32_t get_smtd_timeout(uint16_t keycode, smtd_timeout timeout) {
+  uint32_t default_timeout = get_smtd_timeout_default(timeout);
+  uint32_t really_dangerous_extend = 150;
+  uint32_t dangerous_extend = 50;
+  switch (keycode) {
+    case KC_L:
+    case KC_S:
+      switch(timeout) {
+        case SMTD_TIMEOUT_TAP:
+          return default_timeout + really_dangerous_extend;
+        case SMTD_TIMEOUT_RELEASE:
+          return default_timeout - (really_dangerous_extend >> 3);
+        default:
+          break;
+      }
+
+    case KC_SCLN:
+    case KC_A:
+      switch(timeout) {
+        case SMTD_TIMEOUT_TAP:
+          return default_timeout + dangerous_extend;
+        case SMTD_TIMEOUT_RELEASE:
+          return default_timeout - (dangerous_extend >> 3);
+        default:
+          break;
+      }
+  }
+
+  return default_timeout;
+}
+
+uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
+    switch (keycode) {
+        case LALT_T(KC_S):
+        case LALT_T(KC_L):
+            return TAPPING_TERM + 50;
+        default:
+            return TAPPING_TERM;
+    }
+}
+
+#ifdef qmk_alt
+#define CH_S LALT_T(KC_S)
+#define CH_L LALT_T(KC_L)
+#else
+#define CH_S KC_S
+#define CH_L KC_L
+#endif
 
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   [0] = LAYOUT_voyager(
     KC_TRANSPARENT, KC_F1,          KC_F2,          KC_F3,          KC_F4,          KC_F5,                                          KC_F6,          KC_F7,          KC_F8,          KC_F9,          KC_F10,         KC_F11,         
     CW_TOGG,        KC_Q,           KC_W,           KC_E,           KC_R,           KC_T,                                           KC_Y,           KC_U,           KC_I,           KC_O,           KC_P,           KC_BSLS,        
-    KC_ESCAPE,      KC_NO,          KC_NO,          KC_NO,          KC_NO,          KC_NO,                                          KC_NO,          KC_NO,          KC_NO,          KC_NO,          KC_NO,          KC_QUOTE,       
+    KC_ESCAPE,      KC_A,           CH_S,           KC_D,           KC_F,           KC_G,                                           KC_H,           KC_J,           KC_K,           CH_L,           KC_SCLN,        KC_QUOTE,
     OSL(1),         KC_Z,           KC_X,           KC_C,           KC_V,           KC_B,                                           KC_N,           KC_M,           KC_COMMA,       KC_DOT,         KC_SLASH,       LALT(LSFT(KC_INSERT)),
-                                                    KC_NO,          KC_TAB,                                         KC_BSPC,        KC_NO
+                                                    KC_ENTER,       KC_TAB,                                         KC_BSPC,        KC_SPC
   ),
   [1] = LAYOUT_voyager(
     KC_TRANSPARENT, KC_F1,          KC_F2,          KC_F3,          KC_F4,          KC_F5,                                          KC_F6,          KC_F7,          KC_F8,          KC_F9,          KC_F10,         KC_F11,         
@@ -47,11 +145,37 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 
 const uint16_t PROGMEM combo0[] = { KC_BSLS, KC_QUOTE, KC_F11, COMBO_END};
+const uint16_t PROGMEM combo_ui[] = { KC_U, KC_I, COMBO_END};
+const uint16_t PROGMEM combo_jk[] = { KC_J, KC_K, COMBO_END};
 
 combo_t key_combos[COMBO_COUNT] = {
-    COMBO(combo0, TG(3)),
+    COMBO_ACTION(combo0),
+    COMBO_ACTION(combo_ui),
+    COMBO_ACTION(combo_jk),
 };
 
+void process_combo_event(uint16_t combo_index, bool pressed) {
+  switch(combo_index) {
+    case 0:
+      if (pressed) {
+        layer_invert(3);
+      }
+      break;
+    case 1:
+      if (pressed) {
+        tap_code16(KC_RIGHT_ALT);
+      }
+      break;
+    case 2:
+      keyrecord_t record = {.event = MAKE_KEYEVENT(0, 0, pressed)};
+      process_smtd(CKC_JK, &record);
+      break;
+  }
+}
+
+bool get_combo_must_tap(uint16_t combo_index, combo_t *combo) {
+  return true;
+}
 
 
 extern rgb_config_t rgb_matrix_config;
@@ -95,7 +219,7 @@ bool rgb_matrix_indicators_user(void) {
   if (rawhid_state.rgb_control) {
       return false;
   }
-  if (!keyboard_config.disable_layer_led) { 
+  if (!keyboard_config.disable_layer_led) {
     switch (biton32(layer_state)) {
       case 1:
         set_layer_color(1);
@@ -125,8 +249,12 @@ bool rgb_matrix_indicators_user(void) {
 
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  if (!process_smtd(keycode, record)) {
+    return false;
+  }
+
   switch (keycode) {
-  case QK_MODS ... QK_MODS_MAX: 
+  case QK_MODS ... QK_MODS_MAX:
     // Mouse keys with modifiers work inconsistently across operating systems, this makes sure that modifiers are always
     // applied to the mouse key that was pressed.
     if (IS_MOUSE_KEYCODE(QK_MODS_GET_BASIC_KEYCODE(keycode))) {

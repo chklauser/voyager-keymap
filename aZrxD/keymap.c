@@ -3,10 +3,14 @@
 #define MOON_LED_LEVEL LED_LEVEL
 #define ML_SAFE_RANGE SAFE_RANGE
 
+bool process_snakebab_word(uint16_t keycode, keyrecord_t *record);
+
 enum custom_keycodes {
   RGB_SLD = ML_SAFE_RANGE,
   HSV_169_255_255,
   ST_MACRO_0,
+  SNAKE,
+  KEBAB,
 };
 
 
@@ -15,8 +19,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   [0] = LAYOUT_voyager(
     KC_TRANSPARENT, KC_F1,          KC_F2,          KC_F3,          KC_F4,          KC_F5,                                          KC_F6,          KC_F7,          KC_F8,          KC_F9,          KC_F10,         KC_F11,         
     CW_TOGG,        KC_Q,           KC_W,           KC_E,           KC_R,           KC_T,                                           KC_Y,           KC_U,           KC_I,           KC_O,           KC_P,           KC_BSLS,        
-    KC_ESCAPE,      MT(MOD_LGUI, KC_A),MT(MOD_LALT, KC_S),MT(MOD_LCTL, KC_D),MT(MOD_LSFT, KC_F),MEH_T(KC_G),                                    MEH_T(KC_H),    MT(MOD_RSFT, KC_J),MT(MOD_RCTL, KC_K),MT(MOD_LALT, KC_L),MT(MOD_LGUI, KC_SCLN),KC_QUOTE,       
-    KC_NO,          KC_Z,           KC_X,           KC_C,           KC_V,           KC_B,                                           KC_N,           KC_M,           KC_COMMA,       KC_DOT,         KC_SLASH,       KC_TRANSPARENT, 
+    KC_ESCAPE,      MT(MOD_LGUI, KC_A),MT(MOD_LALT, KC_S),MT(MOD_LCTL, KC_D),MT(MOD_LSFT, KC_F),MEH_T(KC_G),                                    MEH_T(KC_H),    MT(MOD_RSFT, KC_J),MT(MOD_RCTL, KC_K),MT(MOD_LALT, KC_L),MT(MOD_LGUI, KC_SCLN),KC_QUOTE,
+    SNAKE,          KC_Z,           KC_X,           KC_C,           KC_V,           KC_B,                                           KC_N,           KC_M,           KC_COMMA,       KC_DOT,         KC_SLASH,       KEBAB,
                                                     LT(3,KC_ENTER), KC_TAB,                                         KC_BSPC,        LT(4,KC_SPACE)
   ),
   [1] = LAYOUT_voyager(
@@ -175,9 +179,136 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         rgblight_sethsv(169,255,255);
       }
       return false;
+    // CUSTOMIZATIONS
+      case LT(4,KC_F13):
+        if(record->tap.count){
+            if(record->event.pressed){
+              SEND_STRING("_");
+            }
+            return false;
+        }
+    default:
+      if (!process_snakebab_word(keycode, record)) {
+        return false;
+      }
+    // END CUSTOMIZATIONS
   }
   return true;
 }
 
 
 
+
+bool get_combo_must_tap(uint16_t combo_index, combo_t* combo) {
+    switch (combo_index) {
+        case 0:
+            // Return true to indicate that this combo must be pure taps
+                return true;
+        default:
+            return false;
+    }
+}
+
+static uint16_t snakebab_timer;
+
+#define SNAKE_LAYER 1
+#define KEBAB_LAYER 2
+bool process_snakebab_word(uint16_t keycode, keyrecord_t *record) {
+    // From here on, we only take action on press events.
+    if (!record->event.pressed) {
+        return true;
+    }
+
+    snakebab_timer = timer_read();
+    if(keycode == SNAKE){
+        layer_invert(SNAKE_LAYER);
+        layer_off(KEBAB_LAYER);
+        return false;
+    }
+    if(keycode == KEBAB){
+        layer_invert(KEBAB_LAYER);
+        layer_off(SNAKE_LAYER);
+        return false;
+    }
+
+    if(keycode == CW_TOGG) {
+      return true;
+    }
+
+    const uint8_t mods = get_mods() | get_oneshot_mods();
+    if (!(mods & ~(MOD_MASK_SHIFT | MOD_BIT(KC_RALT)))) {
+        if(
+            keycode == MT(MOD_LGUI, KC_A)
+            || keycode == MT(MOD_LALT, KC_S)
+            || keycode == MT(MOD_LCTL, KC_D)
+            || keycode == MT(MOD_LSFT, KC_F)
+            || keycode == MT(MOD_RSFT, KC_J)
+            || keycode == MT(MOD_RCTL, KC_K)
+            || keycode == MT(MOD_LALT, KC_L)
+              || keycode == LT(4,KC_MINUS)
+              || keycode == LT(4,KC_F13)
+          || keycode == ALL_T(KC_G)
+          || keycode == ALL_T(KC_H)
+          ){
+          return true;
+        }
+
+        switch (keycode) {
+            // Ignore MO, TO, TG, TT, and OSL layer switch keys.
+            case QK_MOMENTARY ... QK_MOMENTARY_MAX:
+            case QK_TO ... QK_TO_MAX:
+            case QK_TOGGLE_LAYER ... QK_TOGGLE_LAYER_MAX:
+            case QK_LAYER_TAP_TOGGLE ... QK_LAYER_TAP_TOGGLE_MAX:
+            case QK_ONE_SHOT_LAYER ... QK_ONE_SHOT_LAYER_MAX:
+            case QK_TRI_LAYER_LOWER ... QK_TRI_LAYER_UPPER:
+            // Ignore AltGr.
+            case KC_RALT:
+            case OSM(MOD_RALT):
+                return true;
+            // Keycodes that continue snakebab Word
+            case KC_A ... KC_Z:
+            case KC_MINS:
+            case KC_1 ... KC_0:
+            case KC_BSPC:
+            case KC_DEL:
+            case KC_UNDS:
+                return true;
+            default:
+                layer_off(SNAKE_LAYER);
+                layer_off(KEBAB_LAYER);
+                return true;
+        }
+    } else {
+        layer_off(SNAKE_LAYER);
+        layer_off(KEBAB_LAYER);
+        return true;
+    }
+}
+
+bool caps_word_press_user(uint16_t keycode) {
+    switch (keycode) {
+        // Keycodes that continue Caps Word, with shift applied.
+        case KC_A ... KC_Z:
+        case KC_MINS:
+            add_weak_mods(MOD_BIT(KC_LSFT));  // Apply shift to next key.
+            return true;
+
+        // Keycodes that continue Caps Word, without shifting.
+        case KC_1 ... KC_0:
+        case KC_BSPC:
+        case KC_DEL:
+        case KC_UNDS:
+        case SNAKE:
+  		case KEBAB:
+            return true;
+        default:
+            return false;  // Deactivate Caps Word.
+    }
+}
+
+void matrix_scan_user() {
+    if (timer_elapsed(snakebab_timer) > CAPS_WORD_IDLE_TIMEOUT) {
+        layer_off(SNAKE_LAYER);
+        layer_off(KEBAB_LAYER);
+    }
+}
