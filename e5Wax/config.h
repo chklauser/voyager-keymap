@@ -15,7 +15,7 @@
 #define PERMISSIVE_HOLD
 
 #define USB_SUSPEND_WAKEUP_DELAY 0
-#define SERIAL_NUMBER "e5Wax/OaoNrq"
+#define SERIAL_NUMBER "e5Wax/Lvm9Ne"
 #define LAYER_STATE_8BIT
 #define COMBO_COUNT 3
 #define COMBO_MUST_TAP_PER_COMBO
