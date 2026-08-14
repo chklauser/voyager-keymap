@@ -12,24 +12,7 @@ enum custom_keycodes {
   HSV_169_255_255,
   ST_MACRO_0,
 };
-#include "sm_td.h" // must be included exactly after custom_keycodes
-
-#define SMTD_LTcw(tap_kc, layer_idx) case tap_kc: { \
-  switch (action) { \
-    case SMTD_ACTION_TOUCH: \
-      break; \
-    case SMTD_ACTION_TAP: \
-      caps_word_off(); \
-      tap_code16(tap_kc); \
-      break; \
-    case SMTD_ACTION_HOLD: \
-      LAYER_PUSH(layer_idx); \
-      break; \
-    case SMTD_ACTION_RELEASE: \
-      LAYER_RESTORE(); \
-      break; \
-  } \
-  return SMTD_RESOLUTION_DETERMINED; }
+#include "sm_td.h"
 
 #define MOD_BIT_MEH MOD_BIT(KC_LEFT_SHIFT) | MOD_BIT(KC_LEFT_ALT) | MOD_BIT(KC_LEFT_CTRL)
 smtd_resolution on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
@@ -91,6 +74,21 @@ uint32_t get_smtd_timeout(uint16_t keycode, smtd_timeout timeout) {
   }
 
   return default_timeout;
+}
+
+bool smtd_feature_enabled(uint16_t keycode, smtd_feature feature) {
+  switch (keycode) {
+    case KC_J:
+    case KC_K:
+      // These keys participate in a QMK Combo. Avoid reprocessing their
+      // resolved taps through the Combo pipeline a second time.
+      if (feature == SMTD_FEATURE_PIPELINE_TAPS) {
+        return false;
+      }
+      break;
+  }
+
+  return smtd_feature_enabled_default(keycode, feature);
 }
 
 uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {

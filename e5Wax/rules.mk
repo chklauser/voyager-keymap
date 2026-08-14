@@ -1,6 +1,7 @@
 # Customizations
 # sm_td uses deferred executors
 DEFERRED_EXEC_ENABLE = yes
+SRC += sm_td.c
 
 # Oryx Configuration
 # Set any rules.mk overrides for your specific keymap here.
