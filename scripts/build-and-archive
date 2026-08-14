@@ -1,0 +1,388 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+readonly workflow_file="fetch-and-build-layout.yml"
+readonly workflow_path=".github/workflows/${workflow_file}"
+readonly layout_geometry="voyager"
+readonly default_branch="main"
+readonly default_layout="e5Wax"
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd -- "${script_dir}/.." && pwd)"
+
+layout=""
+branch="${default_branch}"
+run_id=""
+repo=""
+archive_root="${HOME:?HOME is not set}/Dropbox/admin/voyager"
+temporary_zip=""
+temporary_image=""
+
+usage() {
+  cat <<EOF
+Build a Voyager layout with GitHub Actions and archive its extracted firmware image.
+
+Usage:
+  $(basename "$0") [OPTIONS] [LAYOUT]
+
+Options:
+  -l, --layout LAYOUT       Oryx layout ID (for example, e5Wax)
+  -b, --branch BRANCH       Branch containing the workflow (default: main)
+      --run-id ID           Archive an existing run without starting a build
+      --archive-root PATH   Archive root (default: ~/Dropbox/admin/voyager)
+  -R, --repo OWNER/REPO     GitHub repository (default: infer from checkout)
+  -h, --help                Show this help
+
+With no layout, an interactive menu lists layout directories in this checkout.
+If fzf is installed, the menu supports fuzzy matching. With --run-id and no
+layout, the layout is inferred from the run's artifact.
+
+Examples:
+  $(basename "$0")
+  $(basename "$0") e5Wax
+  $(basename "$0") --layout aZrxD --branch main
+  $(basename "$0") --run-id 31774893085
+EOF
+}
+
+die() {
+  printf 'error: %s\n' "$*" >&2
+  exit 1
+}
+
+cleanup() {
+  if [[ -n "${temporary_zip}" && -f "${temporary_zip}" ]]; then
+    rm -f -- "${temporary_zip}"
+  fi
+  if [[ -n "${temporary_image}" && -f "${temporary_image}" ]]; then
+    rm -f -- "${temporary_image}"
+  fi
+}
+trap cleanup EXIT
+
+require_option_value() {
+  local option="$1"
+  local value="${2-}"
+  [[ -n "${value}" ]] || die "${option} requires a value"
+}
+
+while (($# > 0)); do
+  case "$1" in
+    -l | --layout)
+      require_option_value "$1" "${2-}"
+      layout="$2"
+      shift 2
+      ;;
+    --layout=*)
+      layout="${1#*=}"
+      [[ -n "${layout}" ]] || die "--layout requires a value"
+      shift
+      ;;
+    -b | --branch)
+      require_option_value "$1" "${2-}"
+      branch="$2"
+      shift 2
+      ;;
+    --branch=*)
+      branch="${1#*=}"
+      [[ -n "${branch}" ]] || die "--branch requires a value"
+      shift
+      ;;
+    --run-id)
+      require_option_value "$1" "${2-}"
+      run_id="$2"
+      shift 2
+      ;;
+    --run-id=*)
+      run_id="${1#*=}"
+      [[ -n "${run_id}" ]] || die "--run-id requires a value"
+      shift
+      ;;
+    --archive-root)
+      require_option_value "$1" "${2-}"
+      archive_root="$2"
+      shift 2
+      ;;
+    --archive-root=*)
+      archive_root="${1#*=}"
+      [[ -n "${archive_root}" ]] || die "--archive-root requires a value"
+      shift
+      ;;
+    -R | --repo)
+      require_option_value "$1" "${2-}"
+      repo="$2"
+      shift 2
+      ;;
+    --repo=*)
+      repo="${1#*=}"
+      [[ -n "${repo}" ]] || die "--repo requires a value"
+      shift
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -*)
+      die "unknown option: $1"
+      ;;
+    *)
+      [[ -z "${layout}" ]] || die "layout was specified more than once"
+      layout="$1"
+      shift
+      ;;
+  esac
+done
+
+if (($# > 0)); then
+  [[ -z "${layout}" ]] || die "layout was specified more than once"
+  (($# == 1)) || die "too many positional arguments"
+  layout="$1"
+fi
+
+command -v gh >/dev/null 2>&1 || die "gh is required"
+command -v unzip >/dev/null 2>&1 || die "unzip is required"
+command -v sha256sum >/dev/null 2>&1 || die "sha256sum is required"
+
+[[ -z "${run_id}" || "${run_id}" =~ ^[0-9]+$ ]] || die "run ID must be numeric"
+[[ -n "${branch}" ]] || die "branch must not be empty"
+
+cd -- "${repo_root}"
+
+if [[ -z "${repo}" ]]; then
+  repo="$(gh repo view --json nameWithOwner --jq '.nameWithOwner')" ||
+    die "could not infer the GitHub repository"
+fi
+[[ "${repo}" =~ ^[^/]+/[^/]+$ ]] || die "repository must have the form OWNER/REPO"
+
+known_layouts() {
+  local candidate
+
+  if [[ -f "${repo_root}/${default_layout}/config.h" &&
+        -f "${repo_root}/${default_layout}/keymap.c" &&
+        -f "${repo_root}/${default_layout}/rules.mk" ]]; then
+    printf '%s\n' "${default_layout}"
+  fi
+
+  for candidate in "${repo_root}"/*; do
+    [[ -d "${candidate}" ]] || continue
+    [[ "${candidate##*/}" != "${default_layout}" ]] || continue
+    [[ -f "${candidate}/config.h" && -f "${candidate}/keymap.c" && -f "${candidate}/rules.mk" ]] || continue
+    printf '%s\n' "${candidate##*/}"
+  done
+}
+
+choose_layout() {
+  local -a choices=()
+  local answer choice index
+
+  mapfile -t choices < <(known_layouts)
+  ((${#choices[@]} > 0)) || die "no layout directories were found"
+  [[ -t 0 && -t 1 ]] || die "specify --layout when running non-interactively"
+
+  if command -v fzf >/dev/null 2>&1; then
+    choice="$(printf '%s\n' "${choices[@]}" | fzf \
+      --prompt='Layout> ' \
+      --height='~40%' \
+      --layout=reverse \
+      --border \
+      --header='Type to fuzzy-filter; Enter to select')" || die "layout selection cancelled"
+    printf '%s\n' "${choice}"
+    return
+  fi
+
+  printf 'Available layouts:\n' >&2
+  for index in "${!choices[@]}"; do
+    printf '  %d) %s\n' "$((index + 1))" "${choices[index]}" >&2
+  done
+  printf 'Layout [1, %s]: ' "${choices[0]}" >&2
+  read -r answer
+  answer="${answer:-1}"
+  [[ "${answer}" =~ ^[0-9]+$ ]] || die "invalid layout selection"
+  ((answer >= 1 && answer <= ${#choices[@]})) || die "invalid layout selection"
+  printf '%s\n' "${choices[answer - 1]}"
+}
+
+list_run_ids() {
+  gh run list \
+    --repo "${repo}" \
+    --workflow "${workflow_file}" \
+    --event workflow_dispatch \
+    --branch "${branch}" \
+    --limit 30 \
+    --json databaseId \
+    --jq '.[].databaseId'
+}
+
+is_known_run() {
+  local candidate="$1"
+  local known_id
+
+  while IFS= read -r known_id; do
+    [[ "${candidate}" != "${known_id}" ]] || return 0
+  done <<<"${known_run_ids}"
+  return 1
+}
+
+discover_dispatched_run() {
+  local candidate attempt
+
+  for ((attempt = 1; attempt <= 20; attempt++)); do
+    while IFS= read -r candidate; do
+      [[ -n "${candidate}" ]] || continue
+      if ! is_known_run "${candidate}"; then
+        printf '%s\n' "${candidate}"
+        return 0
+      fi
+    done < <(list_run_ids)
+    sleep 3
+  done
+  return 1
+}
+
+if [[ -z "${run_id}" ]]; then
+  if [[ -z "${layout}" ]]; then
+    layout="$(choose_layout)"
+  fi
+  [[ "${layout}" =~ ^[[:alnum:]_-]+$ ]] || die "layout contains unsupported characters"
+
+  printf 'Dispatching %s for layout %s from %s...\n' "${workflow_file}" "${layout}" "${branch}"
+  known_run_ids="$(list_run_ids)" || die "could not list existing workflow runs"
+
+  if ! dispatch_output="$(gh workflow run "${workflow_file}" \
+    --repo "${repo}" \
+    --ref "${branch}" \
+    --raw-field "layout_id=${layout}" \
+    --raw-field "layout_geometry=${layout_geometry}" 2>&1)"; then
+    printf '%s\n' "${dispatch_output}" >&2
+    die "workflow dispatch failed"
+  fi
+  [[ -z "${dispatch_output}" ]] || printf '%s\n' "${dispatch_output}"
+
+  if [[ "${dispatch_output}" =~ /runs/([0-9]+) ]]; then
+    run_id="${BASH_REMATCH[1]}"
+  else
+    printf 'Waiting for GitHub to register the workflow run...\n'
+    run_id="$(discover_dispatched_run)" || die "could not identify the dispatched run"
+  fi
+else
+  printf 'Using existing workflow run %s; no build will be dispatched.\n' "${run_id}"
+fi
+
+printf 'Monitoring run %s...\n' "${run_id}"
+if ! gh run watch "${run_id}" --repo "${repo}" --exit-status; then
+  run_url="$(gh run view "${run_id}" --repo "${repo}" --json url --jq '.url' 2>/dev/null || true)"
+  printf 'Workflow run failed%s.\n' "${run_url:+: ${run_url}}" >&2
+  gh run view "${run_id}" --repo "${repo}" --log-failed >&2 || true
+  exit 1
+fi
+
+run_metadata="$(gh api "repos/${repo}/actions/runs/${run_id}" \
+  --jq '[.status, .conclusion, .created_at, .head_sha, .head_branch, .event, .path, .html_url] | @tsv')" ||
+  die "could not read metadata for run ${run_id}"
+IFS=$'\t' read -r run_status run_conclusion created_at head_sha head_branch run_event run_path run_url <<<"${run_metadata}"
+
+[[ "${run_status}" == "completed" && "${run_conclusion}" == "success" ]] ||
+  die "run ${run_id} completed with conclusion '${run_conclusion}'"
+[[ "${run_event}" == "workflow_dispatch" ]] || die "run ${run_id} was not manually dispatched"
+[[ "${run_path%%@*}" == "${workflow_path}" ]] ||
+  die "run ${run_id} belongs to ${run_path%%@*}, not ${workflow_path}"
+[[ "${head_sha}" =~ ^[0-9a-fA-F]{40}$ ]] || die "run ${run_id} has an invalid head SHA"
+[[ "${created_at}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T ]] || die "run ${run_id} has an invalid creation date"
+
+mapfile -t artifacts < <(
+  gh api --paginate "repos/${repo}/actions/runs/${run_id}/artifacts" \
+    --jq '.artifacts[] | [.id, .name, .size_in_bytes, .expired, .digest] | @tsv'
+) || die "could not list artifacts for run ${run_id}"
+((${#artifacts[@]} > 0)) || die "run ${run_id} has no artifacts"
+
+if [[ -z "${layout}" ]]; then
+  inferred_layouts=()
+  for artifact in "${artifacts[@]}"; do
+    IFS=$'\t' read -r _ artifact_name _ _ _ <<<"${artifact}"
+    [[ "${artifact_name}" == voyager_* ]] || continue
+    inferred_layouts+=("${artifact_name#voyager_}")
+  done
+  ((${#inferred_layouts[@]} == 1)) ||
+    die "could not infer one layout from the run; specify --layout"
+  layout="${inferred_layouts[0]}"
+fi
+[[ "${layout}" =~ ^[[:alnum:]_-]+$ ]] || die "layout contains unsupported characters"
+
+expected_artifact_name="voyager_${layout}"
+artifact_id=""
+artifact_size=""
+artifact_expired=""
+artifact_digest=""
+for artifact in "${artifacts[@]}"; do
+  IFS=$'\t' read -r current_id current_name current_size current_expired current_digest <<<"${artifact}"
+  [[ "${current_name}" == "${expected_artifact_name}" ]] || continue
+  [[ -z "${artifact_id}" ]] || die "run ${run_id} has multiple ${expected_artifact_name} artifacts"
+  artifact_id="${current_id}"
+  artifact_size="${current_size}"
+  artifact_expired="${current_expired}"
+  artifact_digest="${current_digest}"
+done
+
+[[ -n "${artifact_id}" ]] || die "run ${run_id} has no ${expected_artifact_name} artifact"
+[[ "${artifact_expired}" == "false" ]] || die "artifact ${artifact_id} has expired"
+
+archive_date="${created_at:0:10}"
+archive_date="${archive_date//-/}"
+short_sha="${head_sha:0:12}"
+archive_dir="${archive_root}/${layout}"
+archive_stem="${archive_dir}/voyager-${archive_date}-${short_sha}"
+
+for firmware_extension in bin hex; do
+  [[ ! -e "${archive_stem}.${firmware_extension}" ]] ||
+    die "archive already exists: ${archive_stem}.${firmware_extension}"
+done
+mkdir -p -- "${archive_dir}"
+temporary_zip="$(mktemp "${archive_dir}/.voyager-artifact-${run_id}.XXXXXX")"
+
+printf 'Downloading artifact %s...\n' "${expected_artifact_name}"
+if ! gh api "repos/${repo}/actions/artifacts/${artifact_id}/zip" >"${temporary_zip}"; then
+  die "artifact download failed"
+fi
+
+actual_size="$(wc -c <"${temporary_zip}")"
+actual_size="${actual_size//[[:space:]]/}"
+[[ "${actual_size}" == "${artifact_size}" ]] ||
+  die "artifact size mismatch: expected ${artifact_size} bytes, downloaded ${actual_size}"
+
+unzip -tq "${temporary_zip}" >/dev/null || die "downloaded artifact is not a valid ZIP archive"
+mapfile -t firmware_files < <(unzip -Z1 "${temporary_zip}" | grep -E '\.(bin|hex)$' || true)
+((${#firmware_files[@]} == 1)) ||
+  die "artifact ZIP must contain exactly one .bin or .hex firmware image"
+
+if [[ "${artifact_digest}" == sha256:* ]]; then
+  checksum_output="$(sha256sum -- "${temporary_zip}")"
+  actual_digest="${checksum_output%% *}"
+  expected_digest="${artifact_digest#sha256:}"
+  [[ "${actual_digest}" == "${expected_digest}" ]] ||
+    die "artifact SHA-256 mismatch"
+fi
+
+firmware_member="${firmware_files[0]}"
+firmware_extension="${firmware_member##*.}"
+archive_path="${archive_stem}.${firmware_extension}"
+temporary_image="$(mktemp "${archive_dir}/.voyager-image-${run_id}.XXXXXX")"
+unzip -p "${temporary_zip}" "${firmware_member}" >"${temporary_image}" ||
+  die "could not extract ${firmware_member}"
+[[ -s "${temporary_image}" ]] || die "extracted firmware image is empty"
+
+# The hard link publishes the validated image atomically and fails if the target exists.
+ln -- "${temporary_image}" "${archive_path}" ||
+  die "could not create archive without overwriting: ${archive_path}"
+rm -f -- "${temporary_zip}" "${temporary_image}"
+temporary_zip=""
+temporary_image=""
+
+printf 'Archived %s\n' "${archive_path}"
+printf 'Run: %s\n' "${run_url}"
+printf 'Source: %s@%s (%s)\n' "${head_branch}" "${short_sha}" "${created_at}"
+printf 'Artifact image: %s\n' "${firmware_member}"
