@@ -18,8 +18,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *
- * Version: 0.5.6
- * Date: 2026-06-12
+ * Version: 0.6.4
+ * Date: 2026-06-17
  */
 #pragma once
 
@@ -70,6 +70,19 @@
 #define SMTD_GLOBAL_RELEASE_TERM TAPPING_TERM / 4
 #endif
 
+// Dynamic release term (issue #45). For the ambiguous sequence
+// `↓mod ↓key ↑mod ↑key` the decision window for ↑key is derived from the
+// typing rhythm instead of the fixed SMTD_TIMEOUT_RELEASE: hold is chosen
+// only when both releases come much faster than the presses did, i.e.
+//   release_term = min(p1, p2) / SMTD_GLOBAL_RELEASE_RATIO
+// where p1 is the pause between the presses and p2 is the overlap between
+// ↓key and ↑mod. The result is clamped to [1ms .. SMTD_TIMEOUT_RELEASE],
+// so the (possibly per-key) fixed timeout remains the upper bound.
+// Set to 0 to disable and use the fixed SMTD_TIMEOUT_RELEASE as before.
+#ifndef SMTD_GLOBAL_RELEASE_RATIO
+#define SMTD_GLOBAL_RELEASE_RATIO 5
+#endif
+
 #ifndef SMTD_GLOBAL_AGGREGATE_TAPS
 #define SMTD_GLOBAL_AGGREGATE_TAPS false
 #endif
@@ -94,6 +107,13 @@
 // Apply Caps Word shift to MT()/LT() taps when CAPS_WORD_ENABLE is on.
 #ifndef SMTD_QMK_TAPHOLD_USE_CAPS_WORD
 #define SMTD_QMK_TAPHOLD_USE_CAPS_WORD true
+#endif
+
+// QMK-style "chordal hold" (opposite-hands rule). When 1, a tap-hold settles as
+// HOLD only if a key on the opposite hand is involved; same-hand rolls stay taps.
+// Disabled by default so it compiles out entirely (zero code/RAM when off).
+#ifndef SMTD_CHORDAL_HOLD
+#define SMTD_CHORDAL_HOLD 0
 #endif
 
 #include <stdint.h>
@@ -156,6 +176,9 @@ typedef struct {
     /** The time when the key was released */
     uint32_t released_time;
 
+    /** The decision window for the touch-release stage, computed on entering it */
+    uint32_t release_term;
+
     /** The timeout of current stage */
     deferred_token timeout;
 
@@ -186,6 +209,7 @@ typedef struct {
         .tap_count = 0,                             \
         .pressed_time = 0,                          \
         .released_time = 0,                         \
+        .release_term = 0,                          \
         .timeout = INVALID_DEFERRED_TOKEN,          \
         .stage = SMTD_STAGE_NONE,                   \
         .resolution = SMTD_RESOLUTION_UNCERTAIN,    \
@@ -205,11 +229,29 @@ typedef struct {
 
 bool process_smtd(uint16_t keycode, keyrecord_t *record);
 
+/* Clears all sm_td runtime state: the state pool, the active-state list, any
+ * pending timeout deferred-execs, and the executing/bypass flags. Intended for
+ * test harnesses that reuse one process across scenarios (the QMK test fixture
+ * resets QMK state but not sm_td's). Harmless but normally unused in firmware. */
+void smtd_reset(void);
+
 smtd_resolution on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count);
 
 __attribute__((weak)) uint32_t get_smtd_timeout(uint16_t keycode, smtd_timeout timeout);
 
 __attribute__((weak)) bool smtd_feature_enabled(uint16_t keycode, smtd_feature feature);
+
+#if SMTD_CHORDAL_HOLD
+// Per-key handedness used by the chordal-hold rule. Returns 'L' (left), 'R'
+// (right) or '*' (neutral, e.g. thumbs). The default reads the user-supplied
+// chordal_hold_layout from PROGMEM (same 'L'/'R'/'*' convention as QMK); it is
+// weak so a keymap can override it to compute handedness without the array.
+__attribute__((weak)) char smtd_chordal_handedness(keypos_t key);
+
+// Layout marking each matrix position's hand. Required when the default
+// smtd_chordal_handedness() is used (i.e. not overridden by the keymap).
+extern const char chordal_hold_layout[MATRIX_ROWS][MATRIX_COLS];
+#endif
 
 extern const uint16_t keymaps[][MATRIX_ROWS][MATRIX_COLS];
 
@@ -419,6 +461,8 @@ uint32_t get_smtd_timeout_or_default(smtd_state *state, smtd_timeout timeout);
 
 uint32_t get_smtd_timeout_default(smtd_timeout timeout);
 
+uint32_t smtd_compute_release_term(smtd_state *state);
+
 uint16_t smtd_current_keycode(keypos_t *key);
 
 bool smtd_feature_enabled_or_default(smtd_state *state, smtd_feature feature);
@@ -549,10 +593,10 @@ void smtd_unregister_code16(bool use_cl, uint16_t key);
         NOTHING,                                              \
         SMTD_TAP_16(use_cl, tap_key),                         \
         SMTD_LIMIT(threshold,                                 \
-            LAYER_PUSH(layer),                                \
+            layer_on(layer),                                  \
             SMTD_REGISTER_16(use_cl, tap_key)),               \
         SMTD_LIMIT(threshold,                                 \
-            LAYER_RESTORE(),                                  \
+            layer_off(layer),                                 \
             SMTD_UNREGISTER_16(use_cl, tap_key));             \
     )
 
@@ -577,9 +621,9 @@ void smtd_unregister_code16(bool use_cl, uint16_t key);
 
 // multi-tap activated key
 #define SMTD_TK(...) OVERLOAD4(__VA_ARGS__, SMTD_TK4, SMTD_TK3, SMTD_TK2)(__VA_ARGS__)
-#define SMTD_TK2(key, tap_key) SMTD_TK3_ON_MKEY(key, key, tap_key)
-#define SMTD_TK3(key, tap_key, threshold) SMTD_TK3_ON_MKEY(key, key, tap_key, threshold)
-#define SMTD_TK4(key, tap_key, threshold, use_cl) SMTD_TK4_ON_MKEY(key, key, tap_key, threshold, use_cl)
+#define SMTD_TK2(key, tap_key) SMTD_TK2_ON_MKEY(key, tap_key)
+#define SMTD_TK3(key, tap_key, threshold) SMTD_TK3_ON_MKEY(key, tap_key, threshold)
+#define SMTD_TK4(key, tap_key, threshold, use_cl) SMTD_TK4_ON_MKEY(key, tap_key, threshold, use_cl)
 #define SMTD_TK_ON_MKEY(...) OVERLOAD4(__VA_ARGS__, SMTD_TK4_ON_MKEY, SMTD_TK3_ON_MKEY, SMTD_TK2_ON_MKEY)(__VA_ARGS__)
 #define SMTD_TK2_ON_MKEY(...) SMTD_TK3_ON_MKEY(__VA_ARGS__, 1)
 #define SMTD_TK3_ON_MKEY(...) SMTD_TK4_ON_MKEY(__VA_ARGS__, true)
@@ -595,9 +639,9 @@ void smtd_unregister_code16(bool use_cl, uint16_t key);
 
 // multi-tap activated layer move
 #define SMTD_TTO(...) OVERLOAD4(__VA_ARGS__, SMTD_TTO4, SMTD_TTO3, SMTD_TTO2)(__VA_ARGS__)
-#define SMTD_TTO2(key, layer) SMTD_TTO3_ON_MKEY(key, key, layer)
-#define SMTD_TTO3(key, layer, threshold) SMTD_TTO3_ON_MKEY(key, key, layer)
-#define SMTD_TTO4(key, layer, threshold, use_cl) SMTD_TTO4_ON_MKEY(key, key, layer, threshold, use_cl)
+#define SMTD_TTO2(key, layer) SMTD_TTO2_ON_MKEY(key, layer)
+#define SMTD_TTO3(key, layer, threshold) SMTD_TTO3_ON_MKEY(key, layer, threshold)
+#define SMTD_TTO4(key, layer, threshold, use_cl) SMTD_TTO4_ON_MKEY(key, layer, threshold, use_cl)
 #define SMTD_TTO_ON_MKEY(...) OVERLOAD4(__VA_ARGS__, SMTD_TTO4_ON_MKEY, SMTD_TTO3_ON_MKEY, SMTD_TTO2_ON_MKEY)(__VA_ARGS__)
 #define SMTD_TTO2_ON_MKEY(...) SMTD_TTO3_ON_MKEY(__VA_ARGS__, 1)
 #define SMTD_TTO3_ON_MKEY(...) SMTD_TTO4_ON_MKEY(__VA_ARGS__, true)
@@ -612,34 +656,3 @@ void smtd_unregister_code16(bool use_cl, uint16_t key);
     )
 
 
-/* ************************************* *
- *             LAYER UTILS               *
- * ************************************* */
-
-#define RETURN_LAYER_NOT_SET 13
-
-static uint8_t smtd_return_layer = RETURN_LAYER_NOT_SET;
-static uint8_t smtd_return_layer_cnt = 0;
-
-#define LAYER_PUSH(layer)                                   \
-    smtd_return_layer_cnt++;                                \
-    if (smtd_return_layer == RETURN_LAYER_NOT_SET) {        \
-        smtd_return_layer = get_highest_layer(layer_state); \
-    }                                                       \
-    layer_move(layer)
-
-#define LAYER_RESTORE()                               \
-    if (smtd_return_layer_cnt > 0) {                  \
-        smtd_return_layer_cnt--;                      \
-        if (smtd_return_layer_cnt == 0) {             \
-            layer_move(smtd_return_layer);            \
-            smtd_return_layer = RETURN_LAYER_NOT_SET; \
-        }                                             \
-    }
-
-static inline void avoid_unused_variable_on_compile(void *ptr) {
-    // just touch them, so compiler won't throw "defined but not used" error
-    // that variables are used in macros that user may not use
-    if (smtd_return_layer == RETURN_LAYER_NOT_SET) smtd_return_layer = RETURN_LAYER_NOT_SET;
-    if (smtd_return_layer_cnt == 0) smtd_return_layer_cnt = 0;
-}

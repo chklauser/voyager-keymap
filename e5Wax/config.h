@@ -1,6 +1,8 @@
 // Customizations
 // sm_td requires at least 10 deferred executors. If you need your own, increase this limit accordingly.
 #define MAX_DEFERRED_EXECUTORS 10
+// Pin the adaptive release-window behavior instead of relying on sm_td's default.
+#define SMTD_GLOBAL_RELEASE_RATIO 5
 #define TAPPING_TERM 200
 #define TAPPING_TERM_PER_KEY
 #define ONESHOT_TIMEOUT 2000
