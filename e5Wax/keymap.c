@@ -7,7 +7,6 @@
 
 enum custom_keycodes {
   CKC_BEGIN = ZSA_SAFE_RANGE, // no longer required since sm_td 5.0
-  CKC_JK,
   RGB_SLD,
   HSV_169_255_255,
   ST_MACRO_0,
@@ -29,18 +28,6 @@ smtd_resolution on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap
     SMTD_MT(KC_SCLN, KC_LEFT_GUI, 1)
     SMTD_LT(KC_ENTER, 1)
     SMTD_LT(KC_SPACE, 2)
-    case CKC_JK:
-      switch(action){
-        case SMTD_ACTION_TAP:
-          tap_code16(KC_RIGHT_ALT);
-          break;
-        case SMTD_ACTION_TOUCH:
-        case SMTD_ACTION_HOLD:
-        case SMTD_ACTION_RELEASE:
-          // don't do anything
-          break;
-      }
-      return SMTD_RESOLUTION_DETERMINED;
   }
   return SMTD_RESOLUTION_UNHANDLED;
 }
@@ -159,14 +146,11 @@ void process_combo_event(uint16_t combo_index, bool pressed) {
         layer_invert(3);
       }
       break;
-    case 1:
+    case 1: // UI
+    case 2: // JK
       if (pressed) {
         tap_code16(KC_RIGHT_ALT);
       }
-      break;
-    case 2:
-      keyrecord_t record = {.event = MAKE_KEYEVENT(0, 0, pressed)};
-      process_smtd(CKC_JK, &record);
       break;
   }
 }
