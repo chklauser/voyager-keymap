@@ -182,7 +182,9 @@ choose_layout() {
 
   mapfile -t choices < <(known_layouts)
   ((${#choices[@]} > 0)) || die "no layout directories were found"
-  [[ -t 0 && -t 1 ]] || die "specify --layout when running non-interactively"
+  # The caller captures stdout to obtain the selected layout, so only stdin
+  # indicates whether the menu can interact with the user.
+  [[ -t 0 ]] || die "specify --layout when running non-interactively"
 
   if command -v fzf >/dev/null 2>&1; then
     choice="$(printf '%s\n' "${choices[@]}" | fzf \
