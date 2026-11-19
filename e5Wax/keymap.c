@@ -130,12 +130,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 
 const uint16_t PROGMEM combo0[] = { KC_BSLS, KC_QUOTE, KC_F11, COMBO_END};
-const uint16_t PROGMEM combo_ui[] = { KC_U, KC_I, COMBO_END};
 const uint16_t PROGMEM combo_jk[] = { KC_J, KC_K, COMBO_END};
 
 combo_t key_combos[COMBO_COUNT] = {
     COMBO_ACTION(combo0),
-    COMBO_ACTION(combo_ui),
     COMBO_ACTION(combo_jk),
 };
 
@@ -146,8 +144,7 @@ void process_combo_event(uint16_t combo_index, bool pressed) {
         layer_invert(3);
       }
       break;
-    case 1: // UI
-    case 2: // JK
+    case 1: // JK
       if (pressed) {
         tap_code16(KC_RIGHT_ALT);
       }
